@@ -1,5 +1,8 @@
 Bootstrap: docker 
-From: rocm/rocm-build-ubuntu-22.04:6.3 
+From: rocm/rocm-build-ubuntu-22.04:{{ ROCM_VERSION }}
+
+%arguments
+    ROCM_VERSION=6.3
 
 %labels 
     Description "Apptainer container for LOGDURATION" 
@@ -12,8 +15,7 @@ From: rocm/rocm-build-ubuntu-22.04:6.3
     export TRITON_LLVM=/root/.triton/llvm/llvm-7ba6768d-ubuntu-x64 
 
 %files 
-    ../../omniprobe /app/omniprobe
-    triton_install.sh /app
+    . /app/omniprobe
 
 %post 
     # Set globals
@@ -34,7 +36,7 @@ From: rocm/rocm-build-ubuntu-22.04:6.3
     python3 -m pip install --upgrade setuptools 
     
     # ROCm install 
-    ROCM_VERSION="6.3" 
+    ROCM_VERSION={{ ROCM_VERSION }}
     ROCM_MAJOR=$(echo ${ROCM_VERSION} | sed 's/\./ /g' | awk '{print $1}') 
     ROCM_MINOR=$(echo ${ROCM_VERSION} | sed 's/\./ /g' | awk '{print $2}') 
     ROCM_VERSN=$(( (${ROCM_MAJOR}*10000)+(${ROCM_MINOR}*100) )) 
@@ -45,15 +47,8 @@ From: rocm/rocm-build-ubuntu-22.04:6.3
     apt-get install -y rocm-dev${ROCM_VERSION} rocm-llvm-dev${ROCM_VERSION} rocm-hip-runtime-dev${ROCM_VERSION} rocm-smi-lib${ROCM_VERSION} rocminfo${ROCM_VERSION} 
     
     # Triton install 
-    ls /app
-    bash -c "source /app/triton_install.sh -g 368c864e9" 
-    
-    # Logduration install 
-    mkdir -p ~/.ssh 
-    touch ~/.ssh/known_hosts 
-    ssh-keyscan github.com >> ~/.ssh/known_hosts 
-    chmod 700 ~/.ssh 
-    chmod 644 ~/.ssh/known_hosts 
+    ls /app/omniprobe
+    bash -c "source /app/omniprobe/containers/triton_install.sh -g 368c864e9"
     
     cd /app 
     ls

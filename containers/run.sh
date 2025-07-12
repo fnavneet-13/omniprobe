@@ -13,6 +13,10 @@ parent_dir="$(dirname "$script_dir")"
 # Parse arguments
 use_docker=false
 use_apptainer=false
+rocm_version="6.3"  # Default ROCm version
+
+# Supported ROCm versions
+supported_rocm_versions=("6.3" "6.4")
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -24,28 +28,40 @@ while [[ $# -gt 0 ]]; do
       use_apptainer=true
       shift
       ;;
+    --rocm)
+      rocm_version="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--docker] [--apptainer] -- Exactly one option is required."
+      echo "Usage: $0 [--docker] [--apptainer] [--rocm VERSION] -- Exactly one option is required."
       exit 1
       ;;
   esac
 done
 
-# Validate arguments
-if [ "$use_docker" = true ] && [ "$use_apptainer" = true ]; then
-    echo "Error: Cannot use both --docker and --apptainer simultaneously."
-    echo "Usage: $0 [--docker] [--apptainer]"
-    exit 1
-elif [ "$use_docker" = false ] && [ "$use_apptainer" = false ]; then
-    echo "Error: Must specify either --docker or --apptainer."
-    echo "Usage: $0 [--docker] [--apptainer]"
-    echo "  --docker      Run using Docker container"
-    echo "  --apptainer   Run using Apptainer container"
+# Validate ROCm version
+if [[ ! " ${supported_rocm_versions[@]} " =~ " ${rocm_version} " ]]; then
+    echo "Error: Unsupported ROCm version '$rocm_version'"
+    echo "Supported ROCm versions: ${supported_rocm_versions[*]}"
     exit 1
 fi
 
-echo "Starting omniprobe container..."
+# Validate arguments
+if [ "$use_docker" = true ] && [ "$use_apptainer" = true ]; then
+    echo "Error: Cannot use both --docker and --apptainer simultaneously."
+    echo "Usage: $0 [--docker] [--apptainer] [--rocm VERSION]"
+    exit 1
+elif [ "$use_docker" = false ] && [ "$use_apptainer" = false ]; then
+    echo "Error: Must specify either --docker or --apptainer."
+    echo "Usage: $0 [--docker] [--apptainer] [--rocm VERSION]"
+    echo "  --docker      Run using Docker container"
+    echo "  --apptainer   Run using Apptainer container"
+    echo "  --rocm        ROCm version (default: 6.3, supported: ${supported_rocm_versions[*]})"
+    exit 1
+fi
+
+echo "Starting omniprobe container with ROCm $rocm_version..."
 echo "Project directory will be mounted at /workspace"
 echo "Any files you create/modify will persist after the container closes."
 echo ""
@@ -54,12 +70,12 @@ if [ "$use_docker" = true ]; then
     echo "Using Docker containerization..."
     
     # Check if the Docker image exists
-    if ! docker image inspect "$name:$(cat "$parent_dir/VERSION")" > /dev/null 2>&1; then
-        echo "Docker image $name:$(cat "$parent_dir/VERSION") not found."
+    if ! docker image inspect "$name:$(cat "$parent_dir/VERSION")-rocm$rocm_version" > /dev/null 2>&1; then
+        echo "Docker image $name:$(cat "$parent_dir/VERSION")-rocm$rocm_version not found."
         echo "Building Docker image..."
         echo ""
         
-        if ! "$script_dir/build.sh" --docker; then
+        if ! "$script_dir/build.sh" --docker --rocm "$rocm_version"; then
             echo "Error: Failed to build Docker image."
             exit 1
         fi
@@ -80,7 +96,7 @@ if [ "$use_docker" = true ]; then
         --security-opt seccomp=unconfined \
         -v "$parent_dir:/workspace" \
         -w /workspace \
-        "$name:$(cat "$parent_dir/VERSION")"
+        "$name:$(cat "$parent_dir/VERSION")-rocm$rocm_version"
 
 elif [ "$use_apptainer" = true ]; then
     echo "Using Apptainer containerization..."
@@ -93,7 +109,7 @@ elif [ "$use_apptainer" = true ]; then
     fi
     
     # Apptainer image filename
-    apptainer_image="$script_dir/${name}_$(cat "$parent_dir/VERSION").sif"
+    apptainer_image="$script_dir/${name}_$(cat "$parent_dir/VERSION")-rocm${rocm_version}.sif"
     
     # Check if the Apptainer image exists
     if [ ! -f "$apptainer_image" ]; then
@@ -101,7 +117,7 @@ elif [ "$use_apptainer" = true ]; then
         echo "Building Apptainer image automatically..."
         echo ""
         
-        if ! "$script_dir/build.sh" --apptainer; then
+        if ! "$script_dir/build.sh" --apptainer --rocm "$rocm_version"; then
             echo "Error: Failed to build Apptainer image."
             exit 1
         fi
