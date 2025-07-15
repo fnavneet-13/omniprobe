@@ -115,9 +115,13 @@ General omniprobe arguments:
 We provide containerized execution environments for users to get started with omniprobe right away. Leverage the [`containers/run.sh`](containers/run.sh) script to jump into a container with the project and all of its dependencies pre-installed. Use the `--docker` or `--apptainer` flags to build the image for your preferred container runtime.
 
 Example:
-```shell
-# Start container
-./docker/run.sh --docker # Or --apptainer depending on your preference
+```console
+$ ./containers/run.sh 
+Error: Must specify either --docker or --apptainer.
+Usage: ./containers/run.sh [--docker] [--apptainer] [--rocm VERSION]
+  --docker      Run using Docker container
+  --apptainer   Run using Apptainer container
+  --rocm        ROCm version (default: 6.3, supported: 6.3 6.4)
 ```
 
 That's it! If a container matching your detected [`VERSION`](VERSION) of omniprobe doesn't exist already, one will be built automatically.
@@ -163,3 +167,9 @@ logDuration is now dependent on three other libraries that provide various aspec
 
 ### How do you recommend I install Triton?
 To build with Triton instrumentation support, we require you provide the path to Triton's LLVM install (`TRITON_LLVM`). We recommend using a virtual Python environment to avoid clobbering your other packages. See [`docker/triton_install.sh`](docker/triton_install.sh) for help creating this virtual environment automatically. 
+### Where can I find more information on using Omniprobe?
+We are creating some (very) informal tutorial videos that will walk you through things. An introductory tutorial video can be found here:
+<a href="https://www.youtube.com/watch?v=NbRDV2p6fv0" target="_blank"><img src="https://img.youtube.com/vi/NbRDV2p6fv0/maxresdefault.jpg"/></a>
+All videos that we create will be posted at this Youtube channel: [Omniprobe Youtube](https://www.youtube.com/@KeithLowery-w9v)
+
+

@@ -11,6 +11,10 @@ cur_dir=$(pwd)
 # Parse arguments
 build_docker=false
 build_apptainer=false
+rocm_version="6.3"  # Default ROCm version
+
+# Supported ROCm versions
+supported_rocm_versions=("6.3" "6.4")
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -22,42 +26,45 @@ while [[ $# -gt 0 ]]; do
       build_docker=true
       shift
       ;;
+    --rocm)
+      rocm_version="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown option: $1"
-      echo "Usage: $0 [--docker] [--apptainer] -- At least one option is required."
+      echo "Usage: $0 [--docker] [--apptainer] [--rocm VERSION] -- Choose containerization type and ROCm version."
       exit 1
       ;;
   esac
 done
 
-if [ "$build_docker" = false ] && [ "$build_apptainer" = false ]; then
-    echo "Error: At least one of the options --docker or --apptainer is required."
-    echo "Usage: $0 [--docker] [--apptainer]"
+# Validate ROCm version
+if [[ ! " ${supported_rocm_versions[@]} " =~ " ${rocm_version} " ]]; then
+    echo "Error: Unsupported ROCm version '$rocm_version'"
+    echo "Supported ROCm versions: ${supported_rocm_versions[*]}"
     exit 1
 fi
 
-pushd "$script_dir"
-  
-if [ "$build_docker" = true ]; then
-    echo "Building Docker container..."
-    
-    # Auto-configure SSH agent
-    if [ ! -S ~/.ssh/ssh_auth_sock ]; then
-      eval "$(ssh-agent)" > /dev/null
-      ln -sf "$SSH_AUTH_SOCK" ~/.ssh/ssh_auth_sock
-    fi
-    export SSH_AUTH_SOCK=~/.ssh/ssh_auth_sock
+if [ "$build_docker" = false ] && [ "$build_apptainer" = false ]; then
+    echo "Error: At least one of the options --docker or --apptainer is required."
+    echo "Usage: $0 [--docker] [--apptainer] [--rocm VERSION]"
+    echo "  --docker      Build Docker container"
+    echo "  --apptainer   Build Apptainer container"
+    echo "  --rocm        ROCm version (default: 6.3, supported: ${supported_rocm_versions[*]})"
+    exit 1
+fi
 
-    # Add default keys if they exist
-    [ -f ~/.ssh/id_rsa ] && ssh-add ~/.ssh/id_rsa
-    [ -f ~/.ssh/id_ed25519 ] && ssh-add ~/.ssh/id_ed25519
-    [ -f ~/.ssh/id_github ] && ssh-add ~/.ssh/id_github
+pushd "$parent_dir"
+
+if [ "$build_docker" = true ]; then
+    echo "Building Docker container with ROCm $rocm_version..."
+    git submodule update --init --recursive $parent_dir
 
     # Enable BuildKit and build the Docker image
     export DOCKER_BUILDKIT=1
     docker build \
-        --ssh default \
-        -t "$name:$(cat "$parent_dir/VERSION")" \
+        --build-arg ROCM_VERSION="$rocm_version" \
+        -t "$name:$(cat "$parent_dir/VERSION")-rocm$rocm_version" \
         -f "$script_dir/omniprobe.Dockerfile" \
         .
 
@@ -65,7 +72,8 @@ if [ "$build_docker" = true ]; then
 fi
 
 if [ "$build_apptainer" = true ]; then
-    echo "Building Apptainer container..."
+    echo "Building Apptainer container with ROCm $rocm_version..."
+    git submodule update --init --recursive $parent_dir
 
     # Check if apptainer is installed
     if ! command -v apptainer &> /dev/null; then
@@ -74,9 +82,10 @@ if [ "$build_apptainer" = true ]; then
         exit 1
     fi
 
-    # Build the Apptainer container
+    # Build the Apptainer container with ROCm version
     apptainer build \
-      "${name}_$(cat "$parent_dir/VERSION").sif" "$script_dir/omniprobe.def"
+      --build-arg ROCM_VERSION="$rocm_version" \
+      "${script_dir}/${name}_$(cat "$parent_dir/VERSION")-rocm${rocm_version}.sif" "$script_dir/omniprobe.def"
 
     echo "Apptainer build complete!"
 fi
