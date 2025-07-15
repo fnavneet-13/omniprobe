@@ -222,6 +222,8 @@ def get_default_cache_location():
 
 def get_rocm_path():
     tmp = shutil.which("rocminfo")
+    if tmp:
+        tmp = os.path.realpath(tmp)
     nodes = tmp.split("/")
     if len(nodes) > 2:
         return "/".join(nodes[:len(nodes) - 2])
