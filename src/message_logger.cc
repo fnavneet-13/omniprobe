@@ -171,6 +171,8 @@ bool message_logger_t::handle_timeinterval_message(const dh_comms::message_t& me
 void message_logger_t::handle_header(const dh_comms::message_t& message, JSONHelper& json)
 {
     auto hdr = message.wave_header();
+    json.addField("kernel_name", strKernel_, true);
+    json.addField("dispatch_id", dispatch_id_);
     json.addField("exec", hdr.exec, false, false);
     json.addField("timestamp", hdr.timestamp);
     json.addField("dwarf_line", hdr.dwarf_line);
