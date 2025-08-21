@@ -42,7 +42,7 @@ WORKDIR /app/omniprobe
 # =========================
 # Triton install
 # =========================
-RUN  bash -c "source /app/omniprobe/containers/triton_install.sh -g 368c864e9"
+RUN  cd /app && bash -c "source /app/omniprobe/containers/triton_install.sh -g 368c864e9"
 
 ENV TRITON_HIP_LDD_PATH=${ROCM_PATH}/llvm/bin/ld.lld
 ENV TRITON_LLVM=/root/.triton/llvm/llvm-7ba6768d-ubuntu-x64
