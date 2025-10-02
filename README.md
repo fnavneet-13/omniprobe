@@ -61,20 +61,21 @@ Help:
   -h, --help                  show this help message and exit
 
 General omniprobe arguments:
-  -v, --verbose               	Verbose output
-  -k , --kernels              	Kernel filters to define which kernels are instrumented. Valid ECMAScript regular expressions are supported. (cf. https://cplusplus.com/reference/regex/ECMAScript/)
-  -i, --instrumented, --no-instrumented
-                              	Run instrumented kernels (default: False)
-  -e, --env-dump, --no-env-dump
-                              	Dump all the environment variables for running liblogDuration64.so. (default: False)
-  -d , --dispatches           	The dispatches for which to capture instrumentation output. This only applies when running with --instrumented.  Valid options: [all, random, 1]
-  -c , --cache-location       	The location of the file system cache for instrumented kernels. For Triton this is typically found at $HOME/.triton/cache
-  -t , --log-format           	The format for logging results. Default is 'csv'. Valid options: [csv|json]
-  -l , --log-location         	The location where all your data should be logged. By default, it will be to the console.
   -a  [ ...], --analyzers  [ ...]
-                              	The analyzer(s) to use for processing data being streamed from instrumented kernels. 
-                              	Valid values are ['MessageLogger', 'Heatmap', 'MemoryAnalysis', 'BasicBlockAnalysis'] or a reference to any shared library that implements an omniprobe message handler.
-  -- [ ...]                   	Provide command for instrumenting after a double dash.
+                                The analyzer(s) to use for processing data being streamed from instrumented kernels. 
+                                Valid values are ['AddressLogger', 'BasicBlockLogger', 'Heatmap', 'MemoryAnalysis', 'BasicBlockAnalysis'] or a reference to any shared library that implements an omniprobe message handler.
+  -i, --instrumented, --no-instrumented
+                                Run instrumented kernels
+  -c , --cache-location         The location of the file system cache for instrumented kernels. For Triton this is typically found at $HOME/.triton/cache
+  -k , --kernels                Kernel filters to define which kernels are instrumented. Valid ECMAScript regular expressions are supported. (cf. https://cplusplus.com/reference/regex/ECMAScript/)
+  -d , --dispatches             The dispatches for which to capture instrumentation output. This only applies when running with --instrumented.  Valid options: [all, random, 1]
+  -t , --log-format             The format for logging results. Default is 'csv'. Valid options: [csv|json]
+  -l , --log-location           The location where all of your data should be logged. By default it will be to the console.
+  -v, --verbose                 Verbose output
+  -e, --env-dump, --no-env-dump
+                                Dump all the environment variables that are set by omniprobe. This is useful for debugging,
+                                or when you want to use this tool in a context in which running this command-line interface doesn't really work.
+  -- [ ...]                     Provide command for instrumenting after a double dash.
 ```
 
 ## Environment Variables
@@ -133,8 +134,8 @@ This project has several [dependencies](#dependencies) that are included as subm
 Override the default ROCm LLVM search path via `ROCM_PATH`. To build with support for Triton instrumentation, we require you set `TRITON_LLVM`.
 
 ```shell
-git clone https://github.com/AARInternal/logduration.git
-cd logduration
+git clone https://github.com/AMDResearch/omniprobe.git
+cd omniprobe
 git submodule update --init --recursive
 mkdir build
 cd build
@@ -166,7 +167,7 @@ logDuration is now dependent on three other libraries that provide various aspec
 ## FAQ
 
 ### How do you recommend I install Triton?
-To build with Triton instrumentation support, we require you provide the path to Triton's LLVM install (`TRITON_LLVM`). We recommend using a virtual Python environment to avoid clobbering your other packages. See [`docker/triton_install.sh`](docker/triton_install.sh) for help creating this virtual environment automatically. 
+To build with Triton instrumentation support, we require you provide the path to Triton's LLVM install (`TRITON_LLVM`). We recommend using a virtual Python environment to avoid clobbering your other packages. See [`containers/triton_install.sh`](containers/triton_install.sh) for help creating this virtual environment automatically. 
 ### Where can I find more information on using Omniprobe?
 We are creating some (very) informal tutorial videos that will walk you through things. An introductory tutorial video can be found here:
 <a href="https://www.youtube.com/watch?v=NbRDV2p6fv0" target="_blank"><img src="https://img.youtube.com/vi/NbRDV2p6fv0/maxresdefault.jpg"/></a>
