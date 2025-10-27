@@ -581,6 +581,8 @@ unsigned int getLogDurConfig(std::map<std::string, std::string>& config) {
     const char* logDurHandlers = std::getenv("LOGDUR_HANDLERS");
     const char* logDurKernelFilter = std::getenv("LOGDUR_FILTER");
     const char* logDurDispatches = std::getenv("LOGDUR_DISPATCHES");
+    const char* logDurDispatchStart = std::getenv("LOGDUR_DISPATCH_START");
+    const char* logDurDispatchStop = std::getenv("LOGDUR_DISPATCH_STOP");
 
     config["LOGDUR_LOG_LOCATION"] = logDurLogLocation ? logDurLogLocation : "console";
 
@@ -606,6 +608,8 @@ unsigned int getLogDurConfig(std::map<std::string, std::string>& config) {
     config["LOGDUR_FILTER"] = logDurKernelFilter ? logDurKernelFilter : "";
 
     config["LOGDUR_DISPATCHES"] = logDurDispatches ? logDurDispatches : "";
+    config["LOGDUR_DISPATCH_START"] = logDurDispatchStart ? logDurDispatchStart : "1";
+    config["LOGDUR_DISPATCH_STOP"] = logDurDispatchStop ? logDurDispatchStop : "inf";
 
     return config.size();
 }

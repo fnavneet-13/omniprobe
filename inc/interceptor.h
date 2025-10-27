@@ -171,6 +171,8 @@ private:
     std::thread comms_runner_;
     std::vector<dh_comms::message_handler_base *> mh_pool_;
     std::atomic<uint64_t> dispatch_count_;
+    uint64_t dispatch_start_count_ = 1;
+    uint64_t dispatch_stop_count_  = std::numeric_limits<uint64_t>::max();
     dispatchController dispatcher_;
     std::map<hsa_agent_t, std::unique_ptr<kernelDB::kernelDB>, hsa_cmp<hsa_agent_t>> kdbs_;
     static std::mutex singleton_mutex_;

@@ -174,12 +174,17 @@ void message_logger_t::handle_header(const dh_comms::message_t& message, JSONHel
     json.addField("kernel_name", strKernel_, true);
     json.addField("dispatch_id", dispatch_id_);
     json.addField("exec", hdr.exec, false, false);
+    json.addField("Location_ID", hdr.location_id, false, false);
     json.addField("timestamp", hdr.timestamp);
     json.addField("dwarf_line", hdr.dwarf_line);
     json.addField("dwarf_column", hdr.dwarf_column);
     json.addField("block_idx_x", hdr.block_idx_x);
     json.addField("block_idx_y", hdr.block_idx_y);
     json.addField("block_idx_z", hdr.block_idx_z);
+    json.addField("num_blocks_x", hdr.num_blocks_x);
+    json.addField("num_blocks_y", hdr.num_blocks_y);
+    json.addField("num_blocks_z", hdr.num_blocks_z);
+    json.addField("wg_id", hdr.wg_id);
     json.addField("wave_num", ((uint16_t)hdr.wave_num));
     json.addField("xcc_id", ((uint16_t)hdr.xcc_id));
     json.addField("se_id", ((uint16_t)hdr.se_id));

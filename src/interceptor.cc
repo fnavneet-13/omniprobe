@@ -146,6 +146,51 @@ hsaInterceptor::hsaInterceptor(HsaApiTable* table, uint64_t runtime_version, uin
 {
     apiTable_ = table;
     getLogDurConfig(config_);
+
+    // ================== NEW CODE STARTS HERE ==================
+    if (config_.count("LOGDUR_DISPATCH_START")) {
+        try {
+            // Read the start count from the config map (which gets it from the environment)
+            dispatch_start_count_ = std::stoull(config_["LOGDUR_DISPATCH_START"]);
+            std::cerr << "hsaInterceptor: Will start logging at dispatch count: " << dispatch_start_count_ << std::endl;
+        } catch (const std::exception& e) {
+            std::cerr << "hsaInterceptor Warning: Invalid value for LOGDUR_DISPATCH_START. Defaulting to 1." << std::endl;
+            dispatch_start_count_ = 1;
+        }
+    }
+    else
+    {
+            std::cerr << "hsaInterceptor Warning: LOGDUR_DISPATCH_START not specified. Defaulting to 1." << std::endl;
+
+    }
+    // Ensure the start count is at least 1, since dispatch_count is 1-based.
+    if (dispatch_start_count_ == 0) dispatch_start_count_ = 1;
+
+
+    if (config_.count("LOGDUR_DISPATCH_STOP")) {
+        try {
+            if (config_["LOGDUR_DISPATCH_STOP"] == "inf") {
+                dispatch_stop_count_ = std::numeric_limits<uint64_t>::max();
+                std::cerr << "hsaInterceptor INFO: Inf value for LOGDUR_DISPATCH_STOP. "
+                    << "Stop value set to infinity." << std::endl;
+            } else {
+                dispatch_stop_count_ = std::stoull(config_["LOGDUR_DISPATCH_STOP"]);
+                std::cerr << "hsaInterceptor INFO: Tracing stops at dispatch ID:"
+                    << dispatch_stop_count_  << std::endl;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "hsaInterceptor Warning: Invalid value for LOGDUR_DISPATCH_STOP. "
+                    << "Defaulting to infinity." << std::endl;
+            dispatch_stop_count_ = std::numeric_limits<uint64_t>::max();
+        }
+    } else {
+        std::cerr << "hsaInterceptor Warning: LOGDUR_DISPATCH_STOP not specified. Defaulting to infinity."
+                << std::endl;
+        dispatch_stop_count_ = std::numeric_limits<uint64_t>::max();
+    }
+
+    // ================== NEW CODE ENDS HERE ==================
+
     comms_mgr_.setConfig(config_);
     log_.setLocation(config_["LOGDUR_LOG_LOCATION"]);
     if (config_["LOGDUR_INSTRUMENTED"] == "true")
@@ -721,7 +766,7 @@ hsa_kernel_dispatch_packet_t * hsaInterceptor::fixupPacket(const hsa_kernel_disp
                     // What's the kernarg buffer size for this new kernel?
                     uint32_t size = kernel_cache_.getArgSize(alt_kernel_object);
                     //uint8_t test_align = kernel_cache_.getArgumentAlignment(packet->kernel_object);
-                    if (run_instrumented_ && dispatcher_.canDispatch(alt_kernel_object))
+                    if (run_instrumented_ && dispatcher_.canDispatch(alt_kernel_object) && dispatch_id >= dispatch_start_count_ && dispatch_id <= dispatch_stop_count_)
                     {
                         // Found an instrumented  kernel Vobject to use as an alternative
                         dispatch->kernel_object = alt_kernel_object;
@@ -782,14 +827,22 @@ void hsaInterceptor::doPackets(hsa_queue_t *queue, const packet_t *packet, uint6
             if (getHeaderType(&packet[i]) == HSA_PACKET_TYPE_KERNEL_DISPATCH)
             {
                 uint64_t id = ++dispatch_count_;
-                hsa_kernel_dispatch_packet_t *dispatch = fixupPacket(reinterpret_cast<const hsa_kernel_dispatch_packet_t *>(&packet[i]), queue, id);
-                if (dispatch)
-                {
-                    writer(dispatch, 1);
-                    delete dispatch;
-                }
-                else
-                    writer(&packet[i],1);
+                // if(id >= dispatch_start_count_){
+                    hsa_kernel_dispatch_packet_t *dispatch = fixupPacket(reinterpret_cast<const hsa_kernel_dispatch_packet_t *>(&packet[i]), queue, id);
+                    if (dispatch)
+                    {
+                        writer(dispatch, 1);
+                        delete dispatch;
+                    } 
+                    else
+                        writer(&packet[i],1);
+                // }
+                // else
+                // {
+                //     writer(&packet[i],1);
+
+                // }
+                
             }
             else
                 writer(&packet[i],1);
