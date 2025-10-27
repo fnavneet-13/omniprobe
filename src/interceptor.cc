@@ -827,7 +827,7 @@ void hsaInterceptor::doPackets(hsa_queue_t *queue, const packet_t *packet, uint6
             if (getHeaderType(&packet[i]) == HSA_PACKET_TYPE_KERNEL_DISPATCH)
             {
                 uint64_t id = ++dispatch_count_;
-                // if(id >= dispatch_start_count_){
+                // if(id >= dispatch_start_count_ && id <= dispatch_stop_count_){
                     hsa_kernel_dispatch_packet_t *dispatch = fixupPacket(reinterpret_cast<const hsa_kernel_dispatch_packet_t *>(&packet[i]), queue, id);
                     if (dispatch)
                     {
